@@ -141,7 +141,10 @@ app.get("/api/users", async (req, res) => {
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
 });
 
 let users = [];

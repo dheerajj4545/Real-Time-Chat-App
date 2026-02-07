@@ -10,7 +10,7 @@ export default function Login() {
     if (!email || !password) return alert("Fill all fields");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch("https://chat-backend-pmbi.onrender.com/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

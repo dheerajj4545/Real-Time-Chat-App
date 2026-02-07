@@ -45,7 +45,7 @@ export default function Chat() {
   }, []);
 
   const fetchUsers = async () => {
-    const res = await fetch("http://localhost:5000/api/users");
+    const res = await fetch("https://chat-backend-pmbi.onrender.com/api/users");
     const data = await res.json();
     setAllUsers(data.filter((u) => u.username !== username));
   };
@@ -57,7 +57,7 @@ export default function Chat() {
   useEffect(() => {
     if (!username || !room) return;
 
-    socketRef.current = io("http://localhost:5000");
+    socketRef.current = io("https://chat-backend-pmbi.onrender.com");
 
     socketRef.current.emit("join", { username, room });
 
@@ -135,7 +135,7 @@ export default function Chat() {
     const reader = new FileReader();
 
     reader.onload = async () => {
-      await fetch("http://localhost:5000/api/upload-avatar", {
+      await fetch("https://chat-backend-pmbi.onrender.com/api/upload-avatar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, avatar: reader.result })

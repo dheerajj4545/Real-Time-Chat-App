@@ -8,10 +8,10 @@ import Chat from "./pages/Chat";
 function App() {
 
   
-  // useEffect(() => {
-  //   fetch("https://chat-backend-pmbi.onrender.com")
-  //     .catch(() => {}); // silent fail ignore
-  // }, []);
+  useEffect(() => {
+    fetch("https://chat-backend-pmbi.onrender.com")
+      .catch(() => {}); // silent fail ignore
+  }, []);
 
   return (
     <BrowserRouter>

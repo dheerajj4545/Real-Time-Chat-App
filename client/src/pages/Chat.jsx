@@ -61,6 +61,13 @@ export default function Chat() {
 
     socketRef.current.emit("join", { username, room });
 
+    /* 🔥 TAB CLOSE → LEAVE ROOM */
+    const handleTabClose = () => {
+      socketRef.current.emit("leaveRoom", { username, room });
+    };
+
+    window.addEventListener("beforeunload", handleTabClose);
+
     socketRef.current.on("oldMessages", setMessages);
 
     socketRef.current.on("receiveMessage", (data) => {
@@ -88,7 +95,10 @@ export default function Chat() {
       );
     });
 
-    return () => socketRef.current.disconnect();
+    return () => {
+      window.removeEventListener("beforeunload", handleTabClose);
+      socketRef.current.disconnect();
+    };
   }, [room, username]);
 
   useEffect(() => {

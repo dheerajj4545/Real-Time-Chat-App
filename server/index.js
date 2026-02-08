@@ -55,7 +55,6 @@ const Message = mongoose.model("Message", messageSchema);
 
 /* ---------------- AUTH ROUTES ---------------- */
 
-// SIGNUP
 app.post("/api/auth/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -78,7 +77,6 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 });
 
-// LOGIN
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -108,16 +106,13 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-/* ---------------- AVATAR UPLOAD API ---------------- */
+/* ---------------- AVATAR UPLOAD ---------------- */
 
 app.post("/api/upload-avatar", async (req, res) => {
   try {
     const { username, avatar } = req.body;
 
-    await User.updateOne(
-      { username },
-      { avatar }
-    );
+    await User.updateOne({ username }, { avatar });
 
     res.json("Avatar updated");
   } catch (err) {
@@ -125,7 +120,7 @@ app.post("/api/upload-avatar", async (req, res) => {
   }
 });
 
-/* -------- GET ALL USERS (WITH AVATAR + LAST SEEN) -------- */
+/* -------- USERS LIST -------- */
 
 app.get("/api/users", async (req, res) => {
   try {
@@ -136,7 +131,7 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-/* ---------------- SOCKET SERVER ---------------- */
+/* ---------------- SOCKET ---------------- */
 
 const server = http.createServer(app);
 
@@ -152,15 +147,10 @@ let users = [];
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
 
-  /* ---------- JOIN ROOM ---------- */
   socket.on("join", async ({ username, room }) => {
     socket.join(room);
 
-    // ⭐ MARK USER ONLINE
-    await User.updateOne(
-      { username },
-      { isOnline: true }
-    );
+    await User.updateOne({ username }, { isOnline: true });
 
     users = users.filter((u) => u.id !== socket.id);
     users.push({ id: socket.id, username, room });
@@ -174,7 +164,6 @@ io.on("connection", (socket) => {
     socket.emit("oldMessages", oldMessages);
   });
 
-  /* ---------- SEND MESSAGE ---------- */
   socket.on("sendMessage", async ({ message, username, room, type }) => {
     const msg = new Message({
       id: Date.now().toString(),
@@ -190,44 +179,65 @@ io.on("connection", (socket) => {
     io.to(room).emit("receiveMessage", msg);
   });
 
-  /* ---------- TYPING ---------- */
   socket.on("typing", ({ username, room }) => {
     socket.to(room).emit("typing", username);
   });
 
-  /* ---------- DELETE MESSAGE ---------- */
   socket.on("deleteMessage", async ({ id, room }) => {
     await Message.deleteOne({ id });
     io.to(room).emit("messageDeleted", id);
   });
 
-  /* ---------- SEEN STATUS ---------- */
   socket.on("seen", async ({ room }) => {
     await Message.updateMany({ room }, { status: "seen" });
     io.to(room).emit("seen");
   });
 
-  /* ---------- DISCONNECT ---------- */
-  socket.on("disconnect", async () => {
-    const user = users.find((u) => u.id === socket.id);
+  /* 🔥 TAB CLOSE → CHECK ROOM EMPTY → DELETE HISTORY */
+  socket.on("leaveRoom", async ({ username, room }) => {
     users = users.filter((u) => u.id !== socket.id);
 
-    if (user) {
-      // ⭐ SAVE LAST SEEN
-      await User.updateOne(
-        { username: user.username },
-        {
-          isOnline: false,
-          lastSeen: new Date()
-        }
-      );
+    const usersLeft = users.filter((u) => u.room === room);
 
-      io.to(user.room).emit(
-        "onlineUsers",
-        users.filter((u) => u.room === user.room)
-      );
+    if (usersLeft.length === 0) {
+      await Message.deleteMany({ room });
+      console.log("Room deleted:", room);
     }
+
+    io.to(room).emit(
+      "onlineUsers",
+      users.filter((u) => u.room === room)
+    );
   });
+
+  socket.on("disconnect", async () => {
+  const user = users.find((u) => u.id === socket.id);
+  users = users.filter((u) => u.id !== socket.id);
+
+  if (user) {
+    await User.updateOne(
+      { username: user.username },
+      {
+        isOnline: false,
+        lastSeen: new Date()
+      }
+    );
+
+    io.to(user.room).emit(
+      "onlineUsers",
+      users.filter((u) => u.room === user.room)
+    );
+
+    /* 🔥 NEW LOGIC */
+    const roomUsers = users.filter(u => u.room === user.room);
+
+    // Agar room me koi nahi bacha
+    if (roomUsers.length === 0) {
+      await Message.deleteMany({ room: user.room });
+      console.log("Room cleared:", user.room);
+    }
+  }
+});
 });
 
 server.listen(5000, () => console.log("Server running 5000"));

@@ -7,11 +7,11 @@ import Chat from "./pages/Chat";
 
 function App() {
 
-  
-  // useEffect(() => {
-  //   fetch("https://chat-backend-pmbi.onrender.com")
-  //     .catch(() => {}); // silent fail ignore
-  // }, []);
+  // 🔥 Backend warmup (Render sleep issue fix)
+  useEffect(() => {
+    fetch("https://chat-backend-pmbi.onrender.com")
+      .catch(() => {}); // silent fail ignore
+  }, []);
 
   return (
     <BrowserRouter>

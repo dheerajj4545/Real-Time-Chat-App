@@ -178,12 +178,12 @@ export default function Chat() {
   };
 
   return (
-    <div className={`h-screen flex items-center justify-center relative overflow-hidden ${darkMode ? "bg-[#0f172a] text-white" : "bg-white text-black"}`}>
+      <div className={`fixed inset-0 flex items-center justify-center ${darkMode ? "bg-[#0f172a] text-white" : "bg-white text-black"}`}>
 
       <div className="absolute w-[600px] h-[600px] bg-purple-600 opacity-20 blur-[140px] top-[-200px] left-[-200px] animate-pulse"></div>
       <div className="absolute w-[600px] h-[600px] bg-blue-600 opacity-20 blur-[140px] bottom-[-200px] right-[-200px] animate-pulse"></div>
 
-      <div className="w-[95%] h-[92%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex overflow-hidden">
+      <div className="w-[95%] h-[95%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex overflow-hidden">
 
         {/* SIDEBAR */}
         <div className="w-64 max-sm:hidden bg-white/5 border-r border-white/10 p-5 overflow-y-auto">

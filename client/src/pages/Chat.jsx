@@ -61,6 +61,10 @@ export default function Chat() {
 
     socketRef.current.emit("join", { username, room });
 
+    const heartbeat = setInterval(() => {
+      socketRef.current.emit("heartbeat", { username });
+    }, 2000);
+
     /* 🔥 TAB CLOSE → LEAVE ROOM */
     const handleTabClose = () => {
       socketRef.current.emit("leaveRoom", { username, room });

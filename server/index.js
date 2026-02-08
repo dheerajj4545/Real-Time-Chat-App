@@ -11,12 +11,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* ---------------- MONGODB CONNECT ---------------- */
-
-mongoose.connect(process.env.MONGO_URL)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
-
 /* ---------------- USER SCHEMA ---------------- */
 
 const userSchema = new mongoose.Schema({
@@ -53,8 +47,21 @@ const messageSchema = new mongoose.Schema({
 
 const Message = mongoose.model("Message", messageSchema);
 
+/* ---------------- MONGODB CONNECT ---------------- */
+
+mongoose.connect(process.env.MONGO_URL)
+  .then(async () => {
+    console.log("MongoDB Connected");
+
+    // 🔥 PURANI CHAT HISTORY DELETE
+    await Message.deleteMany({});
+    console.log("All old chat history deleted");
+  })
+  .catch(err => console.log(err));
+
 /* ---------------- AUTH ROUTES ---------------- */
 
+// SIGNUP
 app.post("/api/auth/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -77,6 +84,7 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 });
 
+// LOGIN
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -106,7 +114,7 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-/* ---------------- AVATAR UPLOAD ---------------- */
+/* ---------------- AVATAR UPLOAD API ---------------- */
 
 app.post("/api/upload-avatar", async (req, res) => {
   try {
@@ -120,7 +128,7 @@ app.post("/api/upload-avatar", async (req, res) => {
   }
 });
 
-/* -------- USERS LIST -------- */
+/* -------- GET ALL USERS -------- */
 
 app.get("/api/users", async (req, res) => {
   try {
@@ -131,7 +139,7 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-/* ---------------- SOCKET ---------------- */
+/* ---------------- SOCKET SERVER ---------------- */
 
 const server = http.createServer(app);
 
@@ -193,51 +201,25 @@ io.on("connection", (socket) => {
     io.to(room).emit("seen");
   });
 
-  /* 🔥 TAB CLOSE → CHECK ROOM EMPTY → DELETE HISTORY */
-  socket.on("leaveRoom", async ({ username, room }) => {
+  socket.on("disconnect", async () => {
+    const user = users.find((u) => u.id === socket.id);
     users = users.filter((u) => u.id !== socket.id);
 
-    const usersLeft = users.filter((u) => u.room === room);
+    if (user) {
+      await User.updateOne(
+        { username: user.username },
+        {
+          isOnline: false,
+          lastSeen: new Date()
+        }
+      );
 
-    if (usersLeft.length === 0) {
-      await Message.deleteMany({ room });
-      console.log("Room deleted:", room);
+      io.to(user.room).emit(
+        "onlineUsers",
+        users.filter((u) => u.room === user.room)
+      );
     }
-
-    io.to(room).emit(
-      "onlineUsers",
-      users.filter((u) => u.room === room)
-    );
   });
-
-  socket.on("disconnect", async () => {
-  const user = users.find((u) => u.id === socket.id);
-  users = users.filter((u) => u.id !== socket.id);
-
-  if (user) {
-    await User.updateOne(
-      { username: user.username },
-      {
-        isOnline: false,
-        lastSeen: new Date()
-      }
-    );
-
-    io.to(user.room).emit(
-      "onlineUsers",
-      users.filter((u) => u.room === user.room)
-    );
-
-    /* 🔥 NEW LOGIC */
-    const roomUsers = users.filter(u => u.room === user.room);
-
-    // Agar room me koi nahi bacha
-    if (roomUsers.length === 0) {
-      await Message.deleteMany({ room: user.room });
-      console.log("Room cleared:", user.room);
-    }
-  }
-});
 });
 
 server.listen(5000, () => console.log("Server running 5000"));

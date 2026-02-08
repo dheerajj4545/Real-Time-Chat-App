@@ -4,10 +4,13 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     if (!email || !password) return alert("Fill all fields");
+
+    setLoading(true);
 
     try {
       const res = await fetch("https://chat-backend-pmbi.onrender.com/api/auth/login", {
@@ -21,22 +24,21 @@ export default function Login() {
       const data = await res.json();
 
       if (data.token) {
-        // Save JWT + user
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-
-        // Room select page pe bhejo
         navigate("/room");
       } else {
         alert(data);
       }
     } catch (err) {
-      alert("Login failed");
+      alert("Login failed (Server waking up, try again)");
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 overflow-hidden">
 
       {/* Animated Background Blobs */}
       <div className="absolute w-72 h-72 bg-purple-500 rounded-full blur-3xl opacity-30 animate-pulse top-10 left-10"></div>
@@ -49,7 +51,6 @@ export default function Login() {
           Real-Time Chat 🚀
         </h1>
 
-        {/* EMAIL */}
         <input
           type="email"
           placeholder="Enter email"
@@ -57,7 +58,6 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        {/* PASSWORD */}
         <input
           type="password"
           placeholder="Enter password"
@@ -67,12 +67,12 @@ export default function Login() {
 
         <button
           onClick={handleLogin}
+          disabled={loading}
           className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-105 transition-all text-white p-3 rounded-lg font-semibold"
         >
-          Login
+          {loading ? "Connecting..." : "Login"}
         </button>
 
-        {/* SIGNUP LINK */}
         <p
           onClick={() => navigate("/signup")}
           className="text-center text-gray-300 mt-5 cursor-pointer hover:text-white"

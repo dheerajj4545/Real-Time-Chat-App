@@ -33,7 +33,6 @@ export default function Chat() {
     if (!user) navigate("/");
   }, []);
 
-  /* 🔥 CLICK ANYWHERE TO CLOSE REACTION BAR */
   useEffect(() => {
     const handleClick = () => {
       setActiveMsg(null);
@@ -58,19 +57,11 @@ export default function Chat() {
     if (!username || !room) return;
 
     socketRef.current = io("https://chat-backend-pmbi.onrender.com");
-
     socketRef.current.emit("join", { username, room });
 
     const heartbeat = setInterval(() => {
       socketRef.current.emit("heartbeat", { username });
     }, 2000);
-
-    /* 🔥 TAB CLOSE → LEAVE ROOM */
-    const handleTabClose = () => {
-      socketRef.current.emit("leaveRoom", { username, room });
-    };
-
-    window.addEventListener("beforeunload", handleTabClose);
 
     socketRef.current.on("oldMessages", setMessages);
 
@@ -100,7 +91,7 @@ export default function Chat() {
     });
 
     return () => {
-      window.removeEventListener("beforeunload", handleTabClose);
+      clearInterval(heartbeat);
       socketRef.current.disconnect();
     };
   }, [room, username]);
@@ -162,10 +153,6 @@ export default function Chat() {
     if (file) reader.readAsDataURL(file);
   };
 
-  const deleteMessage = (id) => {
-    socketRef.current.emit("deleteMessage", { id, room });
-  };
-
   const openPrivateChat = (otherUser) => {
     const privateRoom =
       username < otherUser.username
@@ -192,12 +179,13 @@ export default function Chat() {
   };
 
   return (
-      <div className={`fixed inset-0 flex items-center justify-center ${darkMode ? "bg-[#0f172a] text-white" : "bg-white text-black"}`}>
+    <div className={`fixed inset-0 flex items-center justify-center ${darkMode ? "bg-[#0f172a] text-white" : "bg-white text-black"}`}>
 
       <div className="absolute w-[600px] h-[600px] bg-purple-600 opacity-20 blur-[140px] top-[-200px] left-[-200px] animate-pulse"></div>
       <div className="absolute w-[600px] h-[600px] bg-blue-600 opacity-20 blur-[140px] bottom-[-200px] right-[-200px] animate-pulse"></div>
 
-      <div className="w-[95%] h-[95%] bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex overflow-hidden">
+      {/* ⭐ ONLY CHANGE HERE FOR MOBILE */}
+      <div className="w-[95%] h-[95%] max-sm:w-full max-sm:h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex overflow-hidden">
 
         {/* SIDEBAR */}
         <div className="w-64 max-sm:hidden bg-white/5 border-r border-white/10 p-5 overflow-y-auto">
@@ -233,7 +221,6 @@ export default function Chat() {
         {/* CHAT */}
         <div className="flex-1 flex flex-col">
 
-          {/* TOP BAR */}
           <div className="flex justify-between items-center p-4 bg-white/5 border-b border-white/10">
             <div>
               <h2 className="font-bold text-lg">Room: {room}</h2>

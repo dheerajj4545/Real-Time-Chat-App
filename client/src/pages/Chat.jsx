@@ -188,7 +188,7 @@ export default function Chat() {
       <div className="w-[95%] h-[95%] max-sm:w-full max-sm:h-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex overflow-hidden">
 
         {/* SIDEBAR */}
-        <div className="w-64 max-sm:hidden bg-white/5 border-r border-white/10 p-5 overflow-y-auto">
+        <div className="w-64 max-sm:w-40 bg-white/5 border-r border-white/10 p-5 overflow-y-auto">
           <h2 className="font-bold mb-4">Users</h2>
 
           {allUsers.map((u, i) => (
